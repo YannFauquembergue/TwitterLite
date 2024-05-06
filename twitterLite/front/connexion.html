@@ -22,7 +22,6 @@
                 <div class="text-center">
                     <h1 class="mx-auto my-0 text-uppercase">Connexion à TwitterLite</h1>
                     <div class="result"></div>
-                    <form id="loginForm" action="votre_page_de_traitement.php" method="post">
                         <div class="form-group">
                             <label for="username">Nom d'utilisateur :</label>
                             <input type="text" id="username" name="username" class="form-control" required minlength="3" maxlength="16" size="10">
@@ -32,7 +31,7 @@
                             <input type="password" id="password" name="password" class="form-control" required minlength="3" maxlength="16" size="10">
                         </div>
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Se Connecter</button>
+                            <button type="submit" id = "loginbtn" class="btn btn-primary" onclick="return false;">Se Connecter</button>
                         </div>
                         <div class="form-group">
                             <a href="inscription.html" class="btn btn-secondary white-text">Je n'ai pas de compte</a>
@@ -47,10 +46,11 @@
                             </div>           
                         </div>
                         
-                    </form>
+                    
                 </div>
             </div>
         </div>
     </header>
 </body>
+<script src="connexion.js"></script>
 </html>

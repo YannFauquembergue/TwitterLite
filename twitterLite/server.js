@@ -2,6 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const mysql = require('mysql');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = 3000;
@@ -26,6 +28,12 @@ db.connect((err) => {
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
 
+  // Générez un token avec jwt.sign
+  const token = jwt.sign({ username: req.body.username }, 'secret_key');
+
+  // Définissez le cookie avec le token
+  res.cookie('auth_token', token, { httpOnly: true });
+
   // Vérification si l'utilisateur existe déjà
   db.query('SELECT * FROM User WHERE username = ?', [username], async (error, results) => {
     if (error) {
@@ -39,7 +47,7 @@ app.post('/register', (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Enregistrement de l'utilisateur dans la base de données avec le mot de passe haché
-      db.query('INSERT INTO User (username, password) VALUES (?, ?)', [username, hashedPassword], (error, results) => {
+      db.query('INSERT INTO User (username, password, token) VALUES (?, ?, ?)', [username, hashedPassword, token], (error, results) => {
         if (error) {
           throw error;
         }
@@ -49,8 +57,25 @@ app.post('/register', (req, res) => {
   });
 });
 
+app.post('/tweet', (req, res) => {
+  const { content, idUser } = req.body;
+
+  db.query('INSERT INTO Tweet (content, idUser) VALUES (?, ?)', [content, idUser], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    res.status(201).json("Tweet publié !");
+  });
+});
+
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
+
+  // Générez un token avec jwt.sign
+  const token = jwt.sign({ username: req.body.username }, 'secret_key');
+
+  // Définissez le cookie avec le token
+  res.cookie('auth_token', token, { httpOnly: true });
 
   // Recherche de l'utilisateur dans la base de données
   db.query('SELECT * FROM User WHERE username = ?', username, async (error, results) => {
@@ -67,6 +92,11 @@ app.post('/login', (req, res) => {
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (passwordMatch) {
+        db.query('UPDATE User SET token = ?', token, (error, results) => {
+          if (error) {
+            throw error;
+          }
+        });
         res.status(200).json({ message: "Connexion réussie !" });
       } else {
         res.status(401).json({ error: "Nom d'utilisateur ou mot de passe incorrect" });
