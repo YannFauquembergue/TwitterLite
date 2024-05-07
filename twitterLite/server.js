@@ -57,10 +57,28 @@ app.post('/register', (req, res) => {
   });
 });
 
-app.post('/postTweet', (req, res) => {
-  const { content, idUser } = req.body;
+function extractUsername(req, res, next) {
+  const token = req.cookies.auth_token;
+  if (token) {
+    jwt.verify(token, 'secret_key', (err, decoded) => {
+      if (err) {
+        console.error('Erreur lors de la vérification du token :', err);
+        res.status(401).json({ error: 'Token invalide' });
+      } else {
+        req.username = decoded.username;
+        next();
+      }
+    });
+  } else {
+    res.status(401).json({ error: 'Token manquant' });
+  }
+}
 
-  db.query('INSERT INTO Tweet (content, idUser) VALUES (?, ?)', [content, idUser], (error, results) => {
+app.post('/postTweet', extractUsername, (req, res) => {
+  const { content } = req.body;
+  const username = req.username;
+
+  db.query('INSERT INTO Tweet (content, username) VALUES (?, ?)', [content, username], (error, results) => {
     if (error) {
       throw error;
     }
