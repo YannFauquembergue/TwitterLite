@@ -15,16 +15,19 @@ document.getElementById('loginbtn').addEventListener('click', async function(eve
 
         if (response.ok) {
             const results = await response.json();
-            console.log('Login successful:', results);
+            console.log('Connexion réussie:', results);
             document.cookie = `reco=${username}; path=/`;
-            window.location.href = 'index.html'; // Redirect user to successful login page
-        } else if (response.status === 401 || response.status === 409) {
+            window.location.href = 'index.html';
+        } 
+        else if (response.status === 401 || response.status === 409) {
             const errorText = await response.json();
-            console.error('Login failed:', errorText.error);
-        } else {
-            console.error('Login failed: An error occurred');
+            console.error('Echec de la connexion:', errorText.error);
+            document.querySelector('.error-message').textContent = errorText.error;
+        } 
+        else {
+            console.error('Echec de la connexion: Une erreur est survenue');
         }
     } catch (error) {
-        console.error('An error occurred during login:', error);
+        console.error('Une erreur est survenue lors de la connexion:', error);
     }
 });

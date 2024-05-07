@@ -46,7 +46,7 @@ app.post('/register', (req, res) => {
       // Hachage du mot de passe
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Enregistrement de l'utilisateur dans la base de données avec le mot de passe haché
+      // Enregistrement de l'utilisateur dans la base de données avec le mot de passe haché et le token
       db.query('INSERT INTO User (username, password, token) VALUES (?, ?, ?)', [username, hashedPassword, token], (error, results) => {
         if (error) {
           throw error;
@@ -57,7 +57,7 @@ app.post('/register', (req, res) => {
   });
 });
 
-app.post('/tweet', (req, res) => {
+app.post('/postTweet', (req, res) => {
   const { content, idUser } = req.body;
 
   db.query('INSERT INTO Tweet (content, idUser) VALUES (?, ?)', [content, idUser], (error, results) => {
@@ -68,16 +68,22 @@ app.post('/tweet', (req, res) => {
   });
 });
 
+app.get('/tweets', (req, res) => {
+  db.query('SELECT Tweet.content, User.username FROM Tweet INNER JOIN User ON Tweet.idUser = User.id', (error, results) => {
+    if (error) {
+      throw error;
+    }
+    res.status(200).json(results);
+  });
+});
+
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  // Générez un token avec jwt.sign
   const token = jwt.sign({ username: req.body.username }, 'secret_key');
 
-  // Définissez le cookie avec le token
   res.cookie('auth_token', token, { httpOnly: true });
 
-  // Recherche de l'utilisateur dans la base de données
   db.query('SELECT * FROM User WHERE username = ?', username, async (error, results) => {
     if (error) {
       throw error;
@@ -88,15 +94,17 @@ app.post('/login', (req, res) => {
     } else {
       const user = results[0];
 
-      // Vérification du mot de passe
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (passwordMatch) {
-        db.query('UPDATE User SET token = ?', token, (error, results) => {
+        db.query('UPDATE User SET token = ? WHERE username = ?', [token, username], (error, results) => {
           if (error) {
             throw error;
           }
         });
+
+        res.cookie('local_auth_token', token, { httpOnly: false });
+
         res.status(200).json({ message: "Connexion réussie !" });
       } else {
         res.status(401).json({ error: "Nom d'utilisateur ou mot de passe incorrect" });
